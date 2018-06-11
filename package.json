@@ -1,0 +1,10 @@
+{
+  "name": "coolkidscoin",
+  "version": "1.0.0",
+  "description": "Coin for only the cool kids, created using NodeJS because it is cool like that.",
+  "main": "src/server.js",
+  "repository": "https://github.com/yjc279/coolkidscoin",
+  "author": "Yoon Je Chung <yjc279@gmail.com>",
+  "license": "MIT",
+  "private": false
+}
