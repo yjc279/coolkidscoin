@@ -6,5 +6,8 @@
   "repository": "https://github.com/yjc279/coolkidscoin",
   "author": "Yoon Je Chung <yjc279@gmail.com>",
   "license": "MIT",
-  "private": false
+  "private": false,
+  "dependencies": {
+    "crypto-js": "^3.1.9-1"
+  }
 }
