@@ -45,3 +45,20 @@ const createNewBlock = data => {
     return newBlock;
 }
 
+const getBlocksHash = (block) => createHash(block.index, block.previousHash, block.timestamp, block.data);
+
+const isNewBlockValid = (candiateBlock, latestBlock) => {
+    if(latestBlock.index + 1 !== candidateBlock.index){
+        console.log("The candidate block doesn't have a valid index");
+        return false;
+    } else if(lastestBlock.hash !== candidateBock.previousHash) {
+        console.log('The previous of the candidate block is not the has of the latest block');
+        return false;
+    } else if (getBlockHash(candidateBlock) !==candidateBlock.hash) {
+        console.log("The hash of this block is invlad");
+        return false;
+    } 
+    return true;
+}
+
+
