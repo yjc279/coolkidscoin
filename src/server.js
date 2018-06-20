@@ -5,7 +5,7 @@ const express = require("express"),
     p2p = require('./p2p');
 
 const { getBlockchain, createNewBlock } = Blockchain;
-const { startP2PServer } = p2p;
+const { startP2PServer, connectToPeers } = p2p;
 
 const PORT = process.env.HTTP_PORT || 3000;
 
@@ -23,7 +23,11 @@ app.post("/blocks", (req,res) => {
     res.send(newBlock);
 });
 
-
+app.post("/peers", (req,res)=>{
+    const {body : { peer } }= req;
+    connectToPeers(peer);
+    res.send(); 
+});
 
 const server = app.listen(PORT, () => 
     console.log(`Cool Kids Coin Server running on ${PORT}. Lets Get it!!` )
