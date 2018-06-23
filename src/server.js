@@ -26,7 +26,6 @@ app.post("/blocks", (req,res) => {
 app.post("/peers", (req,res)=>{
     const {body : { peer } }= req;
     connectToPeers(peer);
-    res.send(); 
 });
 
 const server = app.listen(PORT, () => 
