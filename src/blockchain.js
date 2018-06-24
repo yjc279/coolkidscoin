@@ -49,6 +49,7 @@ const createNewBlock = data => {
         data
     );
     addBlockToChain(newBlock);
+    require("./p2p").broadcastNewBlock();
     return newBlock;
 };
 
@@ -124,9 +125,9 @@ const addBlockToChain = candidateBlock => {
 };
 
 module.exports = {
+    getNewestBlock,
     getBlockchain,
     createNewBlock,
-    getNewestBlock,
     isBlockStructureValid,
     addBlockToChain,
     replaceChain
