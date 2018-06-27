@@ -29,6 +29,6 @@ app.post("/peers", (req,res)=>{
 });
 
 const server = app.listen(PORT, () => 
-    console.log(`Cool Kids Coin Server running on ${PORT}. Lets Get it!!` )
+    console.log(`Cool Kids Coin Server running on ${PORT}. Let's git it!!` )
 );
 startP2PServer(server);
