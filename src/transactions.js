@@ -206,4 +206,4 @@ const validateCoinBaseTx = (tx, blockIndex) => {
     } else {
         return true;
     }
-}
+};

@@ -2,10 +2,12 @@ const express = require("express"),
     bodyParser = require("body-parser"),
     morgan = require("morgan"),
     Blockchain = require("./blockchain"),
-    p2p = require('./p2p');
+    p2p = require('./p2p'),
+    Wallet = require("./wallet");
 
 const { getBlockchain, createNewBlock } = Blockchain;
 const { startP2PServer, connectToPeers } = p2p;
+const { initWallet } = Wallet;
 
 const PORT = process.env.HTTP_PORT || 3000;
 
@@ -31,4 +33,6 @@ app.post("/peers", (req,res)=>{
 const server = app.listen(PORT, () => 
     console.log(`Cool Kids Coin Server running on ${PORT}. Let's git it!!` )
 );
+
+initWallet();
 startP2PServer(server);
