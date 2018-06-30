@@ -13,9 +13,9 @@ class TxOut{
 }
 
 class TxIn{
-    //uTxOutId
-    //uTxOutIndex
-    // Signature
+    //txOutId
+    //txOutIndex
+    //Signature
 }
 
 class Transaction{
@@ -52,10 +52,10 @@ const findUTxOut = (txOutId, txOutIndex, uTxOutList) => {
     ); 
 }
 
-const signTxIn = (tx, txInIndex, privateKey, uTxOut) => {
+const signTxIn = (tx, txInIndex, privateKey, uTxOutList) => {
     const txIn = tx.txIns[txInIndex];
     const dataToSign = tx.id;
-    const referencedUTxOut = findUTxOut(txIn.txOutId, txIn.txOutIndex, uTxOuts);
+    const referencedUTxOut = findUTxOut(txIn.txOutId, txIn.txOutIndex, uTxOutList);
     if(referencedUTxOut === null){
         return;
     }
@@ -217,4 +217,13 @@ const validateCoinBaseTx = (tx, blockIndex) => {
     } else {
         return true;
     }
+};
+
+module.exports = {
+  getPublicKey,
+  getTxId,
+  signTxIn,
+  TxIn,
+  Transaction,
+  TxOut
 };

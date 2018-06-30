@@ -1,8 +1,11 @@
 const elliptic = require("elliptic"),
     path = require("path");
     fs = require("fs"),
-    _ = require("lodash");
+    _ = require("lodash"),
+    Transactions = require("./transactions");
 const ec = new elliptic.ec("secp256k1");
+
+const { getPublicKey, getTxId, signTxIn, TxIn, Transaction, TxOut } = Transactions;
 
 const privateKeyLocation = path.join(__dirname, "privateKey");
 
@@ -37,6 +40,61 @@ const initWallet = () => {
     const newPrivateKey = generatePrivateKey();
 
     fs.writeFileSync(privateKeyLocation, newPrivateKey);
+}
+
+const findAmmountInUTxOuts = (amountNeeded, myUTxOuts) => {
+    let currentAmount = 0;
+    const includedUTxOuts =[];
+    for(const myUTxOut of myUTxOuts){
+        includedUTxOuts.push(myUTxOut);
+        currentAmount = currentAmount + myUTxOut.amount;
+    }
+    if (currentAmount >= amountNeeded) {
+        const leftOverAmount = currentAmount - amountNeeded;
+        return { includedUTxOuts, leftOverAmount };
+    }
+    console.log("Not enough funds");
+    return false;
+}
+
+const createTxOuts = (receiverAddress, myAddress, amount, leftOverAmount) => {
+    const receiverTxOut = new TxOut(receiverAddress, amount);
+    if(leftOverAmount === 0 ){
+        return [receiverTxOut];
+    } else {
+        const leftOverTxOut = new TxOut(myAddress, leftOverAmount);
+        return [receiverTxOut,leftOverTxOut];
+    }
+}
+
+const createTx = (receiverAddress, amount, privateKey, uTxOutList) => {
+    const myAddress = getPublicKey(privateKey);
+    const myUTxOuts = uTxOutList.filter(uTxO => uTxO.address === myAddress);
+    const { includedUTxOuts, leftOverAmount } = findAmmountInUTxOuts(
+        amount,
+        myUTxOuts
+    );
+
+    const toUnsignedTxIn = uTxOut => {
+        const txIn = new TxIn();
+        txIn.txOutId = uTxOut.txOutId;
+        txIn.txOutIndex = uTxOut.txOutIndex;
+    };
+
+    const unsignedTxIns = includedUTxOuts.map(toUnsignedTxIn);
+
+    const tx = new Transaction();
+
+    tx.txIns = unsignedTxIns;
+    tx.txOuts = createTxOuts(receiverAddress, myAddress, amount,leftOverAmount);
+    tx.id = getTxId(tx);
+
+    tx.txIns = tx.txIns.map((txIn, index) => {
+        txIn.signature = signTxIn(tx,index, privateKey, uTxOutList);
+        return txIn;
+    });
+    
+    return tx;
 }
 
 module.exports = {
