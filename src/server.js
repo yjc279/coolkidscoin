@@ -19,9 +19,8 @@ app.get( "/blocks", (req,res) => {
         res.send(getBlockchain());
     });
 
-app.post("blocks", (req,res) => {
-        const { body: { data } } = req;
-        const newBlock = createNewBlock(data);
+app.post("/blocks", (req,res) => {
+        const newBlock = createNewBlock();
     res.send(newBlock);
     });
 
