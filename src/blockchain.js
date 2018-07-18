@@ -38,19 +38,31 @@ class Block {
     }
 }
 
+const genesisTx = {
+    txIns: [{signature: "", txOutId: "", txOutIndex: 0}],
+    txOuts: [
+        {
+            address:
+            "046b05e8f5f9e1574b057dcba60bae42814e85bcd221d459122abc6c5fe1e28ba93f1701cf741b2f3df3328bdba90472471ca20ab9c952cb31cd31adb3f4e36286",
+            amount:50
+        }
+    ],
+    id: "b2f37c2e82ec729f1fe40dd31ffc7eef1d6bbbf5527dd052e2f58223a5624cc2"
+}
+
 const genesisBlock = new Block(
     0,
-    "2C4CEB90344F20CC4C77D626247AED3ED530C1AEE3E6E85AD494498B17414CAC",
+    "ee20a49fc48004781f445bc464b4a8588260e24cb078a9975c53eb097ef06599",
     null,
     1520408084,
-    "This is the genesis!!",
+    [genesisTx],
     0,
     0
 );
 
 let blockchain = [genesisBlock];
 
-let uTxOuts = [];
+let uTxOuts = [processTxs(blockchain[0].data,[],0)];
 
 const getNewestBlock = () => blockchain[blockchain.length - 1];
 
@@ -81,10 +93,10 @@ const createNewRawBlock = data => {
         newBlockIndex,
         previousBlock.hash,
         newTimestamp,
-        data,
+        data, // tx data
         difficulty
     );
-    addBlockToChain(newBlock);
+    addBlockToChain(newBlock); //add block after solving difficulty
     require("./p2p").broadcastNewBlock();
     return newBlock;
 };
@@ -119,7 +131,7 @@ const calculateNewDifficulty = (newestBlock, blockchain) => {
 const findBlock = (index, previousHash, timestamp, data, difficulty) => {
     let nonce = 0;
     while (true) {
-        console.log("Current nonce", nonce);
+        //console.log("Current nonce", nonce);
         const hash = createHash(
             index,
             previousHash,
@@ -146,7 +158,7 @@ const findBlock = (index, previousHash, timestamp, data, difficulty) => {
 const hashMatchesDifficulty = (hash, difficulty) => {
     const hashInBinary = hexToBinary(hash);
     const requiredZeros = "0".repeat(difficulty);
-    console.log("Trying difficulty:", difficulty, "with hash", hashInBinary);
+    //console.log("Trying difficulty:", difficulty, "with hash", hashInBinary);
     return hashInBinary.startsWith(requiredZeros);
 };
 
@@ -237,18 +249,18 @@ const replaceChain = candidateChain => {
 
 const addBlockToChain = candidateBlock => {
     if (isBlockValid(candidateBlock, getNewestBlock())) {
-        const processedTxs = processTxs(
+        const processedTxs = processTxs( // from the new candidate block, get the data and process transactions
             candidateBlock.data,
-            uTxOuts,
+            uTxOuts, //first tx is from genesis tx
             candidateBlock.index
-        );
+        ); // unspent tx outputs => tx => tx inputs && tx outputs => filter out spent tx outputs => return new unspent tx outputs
         if (processedTxs === null) {
             console.log("Couldnt process txs");
             return false;
         } else {
             blockchain.push(candidateBlock);
             uTxOuts = processedTxs;
-            updateMempool(uTxOuts);
+            updateMempool(uTxOuts); // clear mempool
             return true;
         }
         return true;

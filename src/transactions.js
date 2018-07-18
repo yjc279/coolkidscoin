@@ -81,22 +81,22 @@ const getPublicKey = privateKey => {
         .encode("hex");
 };
 
-const updateUTxOuts = (newTxs, uTxOutList) => {
+const updateUTxOuts = (newTxs, uTxOutList) => { // txs are the new txIns and txOuts , latest unspent tx output list
     const newUTxOuts = newTxs
-        .map(tx =>
-            tx.txOuts.map(
+        .map(tx => // create new array of each transaction
+            tx.txOuts.map( // create new array of transaction output
                 (txOut, index) => new UTxOut(tx.id, index, txOut.address, txOut.amount)
             )
         )
-        .reduce((a, b) => a.concat(b), []);
+        .reduce((a, b) => a.concat(b), []); // reduce to one array of new unspent transaction output
 
     const spentTxOuts = newTxs
-        .map(tx => tx.txIns)
-        .reduce((a, b) => a.concat(b), [])
-        .map(txIn => new UTxOut(txIn.txOutId, txIn.txOutIndex, "", 0));
+        .map(tx => tx.txIns) // create array of transaction inputs
+        .reduce((a, b) => a.concat(b), []) // one array of inputs
+        .map(txIn => new UTxOut(txIn.txOutId, txIn.txOutIndex, "", 0)); //create transaction output with amount of 0
 
-    const resultingUTxOuts = uTxOutList
-        .filter(uTxO => !findUTxOut(uTxO.txOutId, uTxO.txOutIndex, spentTxOuts))
+    const resultingUTxOuts = uTxOutList // filter out spent tx outs in the unspent tx output list
+        .filter(uTxO => !findUTxOut(uTxO.txOutId, uTxO.txOutIndex, spentTxOuts)) 
         .concat(newUTxOuts);
     return resultingUTxOuts;
 };
@@ -310,7 +310,7 @@ const validateBlockTxs = (txs, uTxOutList, blockIndex) => {
         .reduce((a, b) => a + b, true);
 };
 
-const processTxs = (txs, uTxOutList, blockIndex) => {
+const processTxs = (txs, uTxOutList, blockIndex) => { // txs are the new txIns and txOuts
     if (!validateBlockTxs(txs, uTxOutList, blockIndex)) {
         return null;
     }

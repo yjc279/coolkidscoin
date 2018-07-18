@@ -3,6 +3,7 @@ const express = require("express"),
     morgan = require("morgan"),
     Blockchain = require("./blockchain"),
     P2P = require("./p2p"),
+    Mempool = require("./memPool"),
     Wallet = require("./wallet");
 
 const {
@@ -16,8 +17,10 @@ const {
     connectToPeers
 } = P2P;
 const {
-    initWallet
+    initWallet,
+    getPublicFromWallet
 } = Wallet;
+const { getMempool } = Mempool;
 
 // Psssst. Don't forget about typing 'export HTTP_PORT=4000' in your console
 const PORT = process.env.HTTP_PORT || 3000;
@@ -26,8 +29,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use(morgan("combined"));
 
-app
-    .route("/blocks")
+app.route("/blocks")
     .get((req, res) => {
         res.send(getBlockchain());
     })
@@ -53,9 +55,15 @@ app.get("/me/balance", (req, res) => {
     });
 });
 
+app.get("/me/address", (req, res) => {
+    res.send(getPublicFromWallet());
+})
+
 app
     .route("/transactions")
-    .get((req, res) => {})
+    .get((req, res) => {
+        res.send(getMempool());
+    })
     .post((req, res) => {
         try {
             const {
