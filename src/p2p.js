@@ -46,6 +46,7 @@ const blockchainResponse = data => {
     };
 };
 
+// changed function name
 const getAllMempool = () => {
     return {
         type: REQUEST_MEMPOOL,
@@ -63,14 +64,16 @@ const mempoolResponse = data => {
 const getSockets = () => sockets;
 
 const startP2PServer = server => {
-    const wsServer = new WebSockets.Server({ server });
+    const wsServer = new WebSockets.Server({
+        server
+    });
     wsServer.on("connection", ws => {
         initSocketConnection(ws);
     });
     wsServer.on("error", () => {
         console.log("error");
     });
-    console.log("Cool Kids Coin P2P Server running");
+    console.log("coolkidscoin P2P Server running");
 };
 
 const initSocketConnection = ws => {
@@ -79,11 +82,11 @@ const initSocketConnection = ws => {
     handleSocketError(ws);
     sendMessage(ws, getLatest());
     setTimeout(() => {
-        sendMessageToAll(ws, getAllMempool());
+        sendMessageToAll(getAllMempool());
     }, 1000);
     setInterval(() => {
-        if(sockets.includes(ws)){
-            sendMessage(ws, '');
+        if (sockets.includes(ws)) {
+            sendMessage(ws, "");
         }
     }, 1000);
 };
@@ -122,18 +125,18 @@ const handleSocketMessages = ws => {
                 break;
             case MEMPOOL_RESPONSE:
                 const receivedTxs = message.data;
-                if(receivedTxs === null){
+                if (receivedTxs === null) {
                     return;
                 }
                 receivedTxs.forEach(tx => {
-                    try{
+                    try {
                         handleIncomingTx(tx);
-                    }catch(e){
+                        broadcastMempool();
+                    } catch (e) {
                         console.log(e);
                     }
                 });
                 break;
-                
         }
     });
 };
@@ -151,7 +154,7 @@ const handleBlockchainResponse = receivedBlocks => {
     const newestBlock = getNewestBlock();
     if (latestBlockReceived.index > newestBlock.index) {
         if (newestBlock.hash === latestBlockReceived.previousHash) {
-            if(addBlockToChain(latestBlockReceived)){
+            if (addBlockToChain(latestBlockReceived)) {
                 broadcastNewBlock();
             }
         } else if (receivedBlocks.length === 1) {
@@ -175,7 +178,7 @@ const responseAll = () => blockchainResponse(getBlockchain());
 
 const broadcastNewBlock = () => sendMessageToAll(responseLatest());
 
-const broadcastMempool = () => sendMessageToAll(returnMempool());
+const broadcastMempool = () => sendMessageToAll(returnMempool()); // <--- new line
 
 const handleSocketError = ws => {
     const closeSocketConnection = ws => {
