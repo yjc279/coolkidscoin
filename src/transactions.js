@@ -35,7 +35,7 @@ class UTxOut {
     }
 }
 
-const getTxId = tx => {
+const getTxId = tx => { //tx ID is hash of txIn + txOut + timestamp 
     const txInContent = tx.txIns
         .map(txIn => txIn.txOutId + txIn.txOutIndex)
         .reduce((a, b) => a + b, "");
@@ -70,7 +70,7 @@ const signTxIn = (tx, txInIndex, privateKey, uTxOutList) => {
         return false;
     }
     const key = ec.keyFromPrivate(privateKey, "hex");
-    const signature = utils.toHexString(key.sign(dataToSign).toDER());
+    const signature = utils.toHexString(key.sign(dataToSign).toDER()); //sign tx id with private key
     return signature;
 };
 
@@ -182,20 +182,20 @@ const validateTxIn = (txIn, tx, uTxOutList) => {
     const wantedTxOut = uTxOutList.find(
         uTxO => uTxO.txOutId === txIn.txOutId && uTxO.txOutIndex === txIn.txOutIndex
     );
-    if (wantedTxOut === null) {
+    if (wantedTxOut === undefined) {
         console.log(`Didn't find the wanted uTxOut, the tx: ${tx} is invalid`);
         return false;
     } else {
         const address = wantedTxOut.address;
         const key = ec.keyFromPublic(address, "hex");
-        return key.verify(tx.id, txIn.signature);
+        return key.verify(tx.id, txIn.signature); // verify key  with signature
     }
 };
 
 const getAmountInTxIn = (txIn, uTxOutList) =>
     findUTxOut(txIn.txOutId, txIn.txOutIndex, uTxOutList).amount;
 
-const validateTx = (tx, uTxOutList) => {
+const validateTx = (tx, uTxOutList) => { //validating transactions
     if (!isTxStructureValid(tx)) {
         console.log("Tx structure is invalid");
         return false;
@@ -206,8 +206,8 @@ const validateTx = (tx, uTxOutList) => {
         return false;
     }
 
-    const hasValidTxIns = tx.txIns.map(txIn =>
-        validateTxIn(txIn, tx, uTxOutList)
+    const hasValidTxIns = tx.txIns.map(txIn => 
+        validateTxIn(txIn, tx, uTxOutList) // looks at each tx in signature and confirm the signature with tx id
     );
 
     if (!hasValidTxIns) {
@@ -307,11 +307,11 @@ const validateBlockTxs = (txs, uTxOutList, blockIndex) => {
 
     return nonCoinbaseTxs
         .map(tx => validateTx(tx, uTxOutList))
-        .reduce((a, b) => a + b, true);
+        .reduce((a, b) => a + b, true); // return true if tx is validated
 };
 
 const processTxs = (txs, uTxOutList, blockIndex) => { // txs are the new txIns and txOuts
-    if (!validateBlockTxs(txs, uTxOutList, blockIndex)) {
+    if (!validateBlockTxs(txs, uTxOutList, blockIndex)) { // validate all block transactions
         return null;
     }
     return updateUTxOuts(txs, uTxOutList);

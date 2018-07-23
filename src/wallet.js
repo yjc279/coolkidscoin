@@ -98,10 +98,10 @@ const filterUTxOutsFromMempool = (uTxOutList, mempool) => {
 };
 
 const createTx = (receiverAddress, amount, privateKey, uTxOutList, mempool) => {
-    const myAddress = getPublicKey(privateKey);
-    const myUTxOuts = uTxOutList.filter(uTxO => uTxO.address === myAddress);
+    const myAddress = getPublicKey(privateKey); // get public key from my private key => publick ke = address
+    const myUTxOuts = uTxOutList.filter(uTxO => uTxO.address === myAddress); //get all the unspent tx output that has my address
 
-    const filteredUTxOuts = filterUTxOutsFromMempool(myUTxOuts, mempool);
+    const filteredUTxOuts = filterUTxOutsFromMempool(myUTxOuts, mempool); // remove unspent tx outputs that are inputs in mempool
 
     const {
         includedUTxOuts,
@@ -127,7 +127,7 @@ const createTx = (receiverAddress, amount, privateKey, uTxOutList, mempool) => {
 
     tx.id = getTxId(tx);
 
-    tx.txIns = tx.txIns.map((txIn, index) => {
+    tx.txIns = tx.txIns.map((txIn, index) => { //tx.id is signed with key from private
         txIn.signature = signTxIn(tx, index, privateKey, uTxOutList);
         return txIn;
     });

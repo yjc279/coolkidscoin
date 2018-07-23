@@ -1,7 +1,7 @@
 const CryptoJS = require("crypto-js"),
     _ = require("lodash"),
     Wallet = require("./wallet"),
-    Mempool = require("./memPool"),
+    Mempool = require("./mempool"),
     Transactions = require("./transactions"),
     hexToBinary = require("hex-to-binary");
 
@@ -62,7 +62,7 @@ const genesisBlock = new Block(
 
 let blockchain = [genesisBlock];
 
-let uTxOuts = [processTxs(blockchain[0].data,[],0)];
+let uTxOuts = processTxs(blockchain[0].data, [], 0);
 
 const getNewestBlock = () => blockchain[blockchain.length - 1];
 
@@ -93,10 +93,10 @@ const createNewRawBlock = data => {
         newBlockIndex,
         previousBlock.hash,
         newTimestamp,
-        data, // tx data
+        data,
         difficulty
     );
-    addBlockToChain(newBlock); //add block after solving difficulty
+    addBlockToChain(newBlock);
     require("./p2p").broadcastNewBlock();
     return newBlock;
 };
@@ -131,7 +131,7 @@ const calculateNewDifficulty = (newestBlock, blockchain) => {
 const findBlock = (index, previousHash, timestamp, data, difficulty) => {
     let nonce = 0;
     while (true) {
-        //console.log("Current nonce", nonce);
+        console.log("Current nonce", nonce);
         const hash = createHash(
             index,
             previousHash,
@@ -158,7 +158,7 @@ const findBlock = (index, previousHash, timestamp, data, difficulty) => {
 const hashMatchesDifficulty = (hash, difficulty) => {
     const hashInBinary = hexToBinary(hash);
     const requiredZeros = "0".repeat(difficulty);
-    //console.log("Trying difficulty:", difficulty, "with hash", hashInBinary);
+    console.log("Trying difficulty:", difficulty, "with hash", hashInBinary);
     return hashInBinary.startsWith(requiredZeros);
 };
 
@@ -219,14 +219,28 @@ const isChainValid = candidateChain => {
         console.log(
             "The candidateChains's genesisBlock is not the same as our genesisBlock"
         );
-        return false;
+        return null;
     }
-    for (let i = 1; i < candidateChain.length; i++) {
-        if (!isBlockValid(candidateChain[i], candidateChain[i - 1])) {
-            return false;
+
+    let foreignUTxOuts = [];
+
+    for (let i = 0; i < candidateChain.length; i++) {
+        const currentBlock = candidateChain[i];
+        if (i !== 0 && !isBlockValid(currentBlock, candidateChain[i - 1])) {
+            return null;
+        }
+
+        foreignUTxOuts = processTxs(
+            currentBlock.data,
+            foreignUTxOuts,
+            currentBlock.index
+        );
+
+        if (foreignUTxOuts === null) {
+            return null;
         }
     }
-    return true;
+    return foreignUTxOuts;
 };
 
 const sumDifficulty = anyBlockchain =>
@@ -236,11 +250,16 @@ const sumDifficulty = anyBlockchain =>
     .reduce((a, b) => a + b);
 
 const replaceChain = candidateChain => {
+    const foreignUTxOuts = isChainValid(candidateChain);
+    const validChain = foreignUTxOuts !== null;
     if (
-        isChainValid(candidateChain) &&
+        validChain &&
         sumDifficulty(candidateChain) > sumDifficulty(getBlockchain())
     ) {
         blockchain = candidateChain;
+        uTxOuts = foreignUTxOuts;
+        updateMempool(uTxOuts);
+        require("./p2p").broadcastNewBlock();
         return true;
     } else {
         return false;
@@ -249,18 +268,18 @@ const replaceChain = candidateChain => {
 
 const addBlockToChain = candidateBlock => {
     if (isBlockValid(candidateBlock, getNewestBlock())) {
-        const processedTxs = processTxs( // from the new candidate block, get the data and process transactions
+        const processedTxs = processTxs(
             candidateBlock.data,
-            uTxOuts, //first tx is from genesis tx
+            uTxOuts,
             candidateBlock.index
-        ); // unspent tx outputs => tx => tx inputs && tx outputs => filter out spent tx outputs => return new unspent tx outputs
+        );
         if (processedTxs === null) {
             console.log("Couldnt process txs");
             return false;
         } else {
             blockchain.push(candidateBlock);
             uTxOuts = processedTxs;
-            updateMempool(uTxOuts); // clear mempool
+            updateMempool(uTxOuts);
             return true;
         }
         return true;
@@ -282,7 +301,12 @@ const sendTx = (address, amount) => {
         getMempool()
     );
     addToMempool(tx, getUTxOutList());
+    require("./p2p").broadcastMempool();
     return tx;
+};
+
+const handleIncomingTx = tx => {
+    addToMempool(tx, getUTxOutList());
 };
 
 module.exports = {
@@ -293,5 +317,7 @@ module.exports = {
     addBlockToChain,
     replaceChain,
     getAccountBalance,
-    sendTx
+    sendTx,
+    handleIncomingTx,
+    getUTxOutList
 };
